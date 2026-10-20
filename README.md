@@ -20,6 +20,22 @@
 
 ---
 
+## Restraint-guided inference
+
+This `rgi-integration` branch adds
+[RGI-toolkit](https://github.com/cddlab/rgi_toolkit/tree/add_bioemu2) 0.4.7.
+The adapter lives in the toolkit; this fork routes input metadata and applies
+the shared optimizer inside the sampling loop.
+
+Add a root `restraints_config` dictionary to a system YAML or `System`, and set
+`conformer_restraints: true` on each entity that should receive conformer
+restraints. Omitting the dictionary preserves ordinary sampling.
+The `edm`, `edm_gd`, and `edm_fk` samplers accept RGI; `edm_fkc` explicitly rejects
+it because its importance weights require a separate derivation.
+See the [integration guide and examples](https://github.com/cddlab/rgi_toolkit/blob/add_bioemu2/docs/bioemu2_restr.md).
+Restraint-guided output is a biased sample and should not be interpreted as an
+unbiased equilibrium ensemble.
+
 BioEmu2, short for "biomolecular emulator", is developed by Microsoft Research
 AI for Science.
 

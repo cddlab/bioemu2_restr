@@ -28,6 +28,7 @@ from bioemu2.denoising.steering.feats import (
 )
 from bioemu2.denoising.steering.potentials import Potential
 from bioemu2.model import InferenceModel
+from bioemu2.restraints import finalize_restraints, minimize_restraints, setup_restraints
 from bioemu2.structure import BatchAllAtomStructure
 from bioemu2.structure.inference_inputs import broadcast_multiplicity
 
@@ -144,6 +145,7 @@ def edm_steered_sampler(
         resampling_group_size=resampling_group_size,
     )
     context = score_model.compute_static_context(batch, trunk_embeddings, multiplicity)
+    restraints = setup_restraints(batch, multiplicity)
     is_ito = context.is_dynamics_conditioned is not None and bool(
         context.is_dynamics_conditioned.any()
     )
@@ -341,6 +343,13 @@ def edm_steered_sampler(
                 )
             x0_hat = cp_sync.broadcast_from_rank0(x0_hat.contiguous())
 
+        if restraints is not None:
+            before_rgi = x0_hat.clone()
+            x0_hat = minimize_restraints(restraints, x0_hat, step_idx, sigma_tm_v)
+            scaled_guidance_update = scaled_guidance_update + (x0_hat - before_rgi) * (
+                -step_scale * (sigma_t_v - t_hat) / max(t_hat, 1e-12)
+            )
+
         # Track pre-resample coordinates.
         if is_rank0 and tracker is not None:
             metrics.update({"x_t": atom_coords_noisy, "x0_hat": x0_hat})
@@ -378,4 +387,5 @@ def edm_steered_sampler(
         denoised_over_sigma = (atom_coords_noisy - x0_hat) / max(t_hat, 1e-12)
         atom_coords = atom_coords_noisy + step_scale * (sigma_t_v - t_hat) * denoised_over_sigma
 
+    finalize_restraints(restraints, atom_coords, num_steps - 1)
     return batch.replace(coords=atom_coords)

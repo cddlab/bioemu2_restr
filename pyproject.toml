@@ -33,6 +33,7 @@ dependencies = [
     "pyyaml",
     "rdkit",
     "requests",
+    "rgi-toolkit @ git+https://github.com/cddlab/rgi_toolkit.git@add_bioemu2",
     "scipy",
     "tenacity",
     # Keep Torch below 2.14 until cuEquivariance GPU compatibility is validated.

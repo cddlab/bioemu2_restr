@@ -325,6 +325,10 @@ def _prepare_sampling_inputs(
     )
     batch = batch_collate([structure], window_size=sizes.n_atom_final).to(model.device)
     batch.update(pad_feats_for_cp(batch, sizes))
+    if system.restraints_config is not None:
+        from bioemu2.restraints import attach_restraints  # noqa: PLC0415
+
+        batch = attach_restraints(batch, structure, system)
     return topology, batch
 
 

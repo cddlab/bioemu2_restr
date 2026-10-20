@@ -135,6 +135,7 @@ class System(BaseModel):
     entities: list[SystemEntity] = Field(min_length=1)
     bonds: list[Bond] = Field(default_factory=list)  # An optional list of bonds
     asym_id_to_author_id: dict[str, str] = Field(default_factory=dict)
+    restraints_config: dict[str, Any] | None = None
 
     def __init__(
         self,
@@ -288,6 +289,10 @@ class System(BaseModel):
         if isinstance(data, dict):
             data.pop("mode", None)
             data.pop("contacts", None)
+            if data.get("restraints_config") is not None:
+                from bioemu2.restraints import resolve_system_restraints  # noqa: PLC0415
+
+                data = resolve_system_restraints(data, path)
         return cls.model_validate(data)
 
     @classmethod
@@ -503,6 +508,10 @@ def load_system_and_contacts(
         data = yaml.safe_load(file)
     if not isinstance(data, dict):
         raise ValueError("System YAML must contain a mapping.")
+    if data.get("restraints_config") is not None:
+        from bioemu2.restraints import resolve_system_restraints  # noqa: PLC0415
+
+        data = resolve_system_restraints(data, path)
     # System forbids extra fields, so separate its fields from the optional contacts.
     system = System.model_validate({k: data.pop(k) for k in System.model_fields if k in data})
     raw_contacts = data.pop("contacts", None)

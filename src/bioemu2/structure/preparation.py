@@ -77,4 +77,8 @@ def prepare_sampling_inputs(
     structure = structure.replace(coords=torch.zeros_like(structure.coords))
     topology = topology_from_structure(structure, renamed_asym_ids=system.chain_ids)
     batch = batch_collate([structure], window_size=window_size).to(device)
+    if system.restraints_config is not None:
+        from bioemu2.restraints import attach_restraints  # noqa: PLC0415
+
+        batch = attach_restraints(batch, structure, system)
     return topology, batch

@@ -16,6 +16,7 @@ from bioemu2.denoising import cp_sync
 from bioemu2.denoising.augmentation import augment_coordinates
 from bioemu2.denoising.rigid_align import weighted_rigid_align
 from bioemu2.model import InferenceModel
+from bioemu2.restraints import finalize_restraints, minimize_restraints, setup_restraints
 from bioemu2.structure import BatchAllAtomStructure
 from bioemu2.structure.inference_inputs import broadcast_multiplicity
 
@@ -97,6 +98,7 @@ def edm_sampler(
         Sampled structures.
     """
     context = score_model.compute_static_context(batch, trunk_embeddings, multiplicity)
+    restraints = setup_restraints(batch, multiplicity)
     is_ito = context.is_dynamics_conditioned is not None and bool(
         context.is_dynamics_conditioned.any()
     )
@@ -165,6 +167,9 @@ def edm_sampler(
                 sigmas=sigmas_step,
             ).denoised_coords
 
+        atom_coords_denoised = minimize_restraints(
+            restraints, atom_coords_denoised, step_idx, sigma_tm
+        )
         if alignment_reverse_diff:
             # Align noisy coordinates to denoised coordinates before Heun update.
             with torch.autocast("cuda", enabled=False):
@@ -182,4 +187,5 @@ def edm_sampler(
 
         atom_coords = atom_coords_next
 
+    finalize_restraints(restraints, atom_coords, num_steps - 1)
     return batch.replace(coords=atom_coords)

@@ -163,6 +163,7 @@ class _Entity(BaseModel):
 
     ENTITY_TYPE: ClassVar[MolType]
     asym_ids: list[str]
+    conformer_restraints: bool = Field(default=False, strict=True)
 
     @field_validator("asym_ids", mode="before")
     def ensure_list(cls, value):
@@ -188,6 +189,8 @@ class _Entity(BaseModel):
         """Custom serializer to include entity_type as the first item."""
         serialized = handler(self)
         serialized.pop("entity_type")
+        if not self.conformer_restraints:
+            serialized.pop("conformer_restraints", None)
         return {"entity_type": self.entity_type, **serialized}
 
     def __str__(self) -> str:

@@ -127,6 +127,11 @@ def edm_fkc_sampler(
             ``weight_update`` is ``"guidance"`` while ``reheat`` is not
             ``"sigma"``.
     """
+    if getattr(batch, "restraints_config", None) is not None:
+        raise NotImplementedError(
+            "RGI supports edm, edm_gd and edm_fk; edm_fkc requires an "
+            "RGI-aware importance-weight derivation."
+        )
     potentials = tuple(potentials)
     if reheat not in ("sigma", "gamma"):
         raise ValueError(f"edm_fkc_sampler got unknown reheat={reheat!r}")
