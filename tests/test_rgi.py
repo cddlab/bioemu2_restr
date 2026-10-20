@@ -133,6 +133,23 @@ def test_ccd_names_and_full_chemistry_are_resolved_offline(monkeypatch):
     assert "@" in Chem.MolToSmiles(mol)
 
 
+@pytest.mark.parametrize("smiles", ["CC(=N)O", "[NH2+]=C(N)N", "CC(=N)O.[Cl-]"])
+def test_smiles_chemistry_survives_inchi_normalization(smiles):
+    source = Chem.RemoveAllHs(Chem.MolFromSmiles(smiles))
+    ligand = Ligand(smiles=smiles, asym_ids="B", conformer_restraints=True)
+    restored = _source_ligand(ligand)
+    assert Chem.MolToSmiles(restored) == Chem.MolToSmiles(source)
+    names = [atom.GetProp("atom_name") for atom in restored.GetAtoms()]
+    assert len(set(names)) == source.GetNumAtoms()
+    system = System(
+        entities=[Protein(sequence="AAA", asym_ids="A"), ligand],
+        restraints_config={"conformer_restraints_config": {"vdw": False}, "gpu": False},
+    )
+    _, batch = prepare_sampling_inputs(system, device=torch.device("cpu"))
+    conformer = next(batch.rgi_adapter.iter_ligand_confs())
+    assert Chem.MolToSmiles(conformer.mol) == Chem.MolToSmiles(source)
+
+
 def test_both_yaml_loaders_resolve_relative_config(tmp_path):
     (tmp_path / "restraints.yaml").write_text("gpu: false\nmax_iter: 17\n")
     system_yaml = tmp_path / "system.yaml"

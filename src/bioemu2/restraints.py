@@ -1,5 +1,6 @@
 """Thin BioEmu2 data extraction and sampling hooks for rgi_toolkit."""
 
+import re
 from pathlib import Path
 
 import numpy as np
@@ -25,12 +26,27 @@ def resolve_system_restraints(data: dict, path: str | Path) -> dict:
     return data
 
 
+def _inchi_atom_order(auxiliary: str, atom_count: int) -> list[int]:
+    """Read original heavy-atom indices in canonical InChI order."""
+    layer = re.search(r"(?:^|/)N:([^/]+)", auxiliary)
+    if layer is None:
+        raise ValueError("InChI auxiliary information has no atom correspondence")
+    order = [int(value) - 1 for value in re.split("[,;]", layer.group(1))]
+    if sorted(order) != list(range(atom_count)):
+        raise ValueError("InChI atom correspondence is not a heavy-atom permutation")
+    return order
+
+
 def _source_ligand(entity: Ligand) -> Chem.Mol:
-    """Resolve the predictor's source graph and authoritative atom names."""
+    """Preserve input chemistry while using the predictor's canonical atom names."""
     if entity.ccd_code is None:
         inchi = entity.inchi
+        source = None
+        source_order = None
         if entity.smiles is not None:
-            inchi = Chem.MolToInchi(Chem.MolFromSmiles(entity.smiles))
+            source = Chem.RemoveAllHs(Chem.MolFromSmiles(entity.smiles))
+            inchi, auxiliary = Chem.MolToInchiAndAuxInfo(source)
+            source_order = _inchi_atom_order(auxiliary, source.GetNumAtoms())
         mol = Chem.MolFromInchi(inchi)
         if mol is None:
             raise ValueError("Cannot resolve BioEmu2 ligand InChI")
@@ -38,7 +54,30 @@ def _source_ligand(entity: Ligand) -> Chem.Mol:
         _assign_mol_atom_names(mol)
         for atom in mol.GetAtoms():
             atom.SetProp("atom_name", atom.GetProp("name"))
-        return Chem.RemoveAllHs(mol)
+        mol = Chem.RemoveAllHs(mol)
+        if source is None:
+            return mol
+        normalized_inchi, auxiliary = Chem.MolToInchiAndAuxInfo(mol)
+        if normalized_inchi != inchi or source.GetNumAtoms() != mol.GetNumAtoms():
+            raise ValueError("BioEmu2 InChI normalization changed the ligand identity")
+        normalized_order = _inchi_atom_order(auxiliary, mol.GetNumAtoms())
+        correspondence = dict(zip(normalized_order, source_order, strict=True))
+        for normalized_index, source_index in correspondence.items():
+            atom = source.GetAtomWithIdx(source_index)
+            normalized_atom = mol.GetAtomWithIdx(normalized_index)
+            if atom.GetAtomicNum() != normalized_atom.GetAtomicNum():
+                raise ValueError("InChI atom correspondence changed an element")
+            atom.SetProp("atom_name", normalized_atom.GetProp("atom_name"))
+        normalized_edges = {
+            tuple(sorted((correspondence[b.GetBeginAtomIdx()], correspondence[b.GetEndAtomIdx()])))
+            for b in mol.GetBonds()
+        }
+        source_edges = {
+            tuple(sorted((b.GetBeginAtomIdx(), b.GetEndAtomIdx()))) for b in source.GetBonds()
+        }
+        if normalized_edges != source_edges:
+            raise ValueError("BioEmu2 InChI normalization changed ligand connectivity")
+        return source
 
     component = _load_ccd_cifwrapper(entity.ccd_code)
     atoms = component._chem_comp_atom

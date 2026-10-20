@@ -26,6 +26,9 @@ This `rgi-integration` branch adds
 [RGI-toolkit](https://github.com/cddlab/rgi_toolkit/tree/add_bioemu2) 0.4.7.
 The adapter lives in the toolkit; this fork routes input metadata and applies
 the shared optimizer inside the sampling loop.
+SMILES restraints retain the input bond orders, charges, and stereochemistry.
+InChI auxiliary atom mappings connect that original graph to BioEmu2's
+canonical atom names, including when its preprocessing changes the tautomer.
 
 Add a root `restraints_config` dictionary to a system YAML or `System`, and set
 `conformer_restraints: true` on each entity that should receive conformer
