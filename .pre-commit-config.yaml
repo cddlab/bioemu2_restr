@@ -17,7 +17,7 @@ repos:
         exclude: ^uv\.lock$
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: 41d2daf392fbf43341a77f24a9c6481a4b66af98  # v0.9.10
+    rev: f12be1ebaa5351c1fc76472de98db2c3446c8253  # v0.16.10
     hooks:
       - id: ruff-format
         args: [--config=pyproject.toml]
