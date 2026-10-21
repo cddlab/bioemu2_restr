@@ -1,3 +1,8 @@
+see [RGI-toolkit](https://github.com/cddlab/rgi_toolkit) for more information.
+
+<details>
+<summary>Original README</summary>
+
 <div align="center">
 
 <img src="assets/emu.png" alt="BioEmu2 logo" width="120">
@@ -307,3 +312,5 @@ Git.
 BioEmu2 is released under the [MIT License](LICENSE). It includes code and
 reference data adapted from other open-source projects; the [third-party
 notices](NOTICES.md) identify those components and their licenses.
+
+</details>
