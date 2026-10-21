@@ -27,7 +27,7 @@ repos:
         files: ^(src|tests)/.*\.py$
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: 0f369d245750787ce34997d464ed9605391a5283  # v1.20.1
+    rev: 2834ec6639549dd6796205c8f011dedcd587288b  # v2.4.0
     hooks:
       - id: mypy
         language_version: python3.12
