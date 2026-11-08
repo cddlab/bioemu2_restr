@@ -153,7 +153,7 @@ requires-dist = [
     { name = "pyyaml" },
     { name = "rdkit" },
     { name = "requests" },
-    { name = "rgi-toolkit", git = "https://github.com/cddlab/rgi_toolkit.git?rev=add_bioemu2" },
+    { name = "rgi-toolkit", git = "https://github.com/cddlab/rgi_toolkit.git" },
     { name = "scipy" },
     { name = "tenacity" },
     { name = "torch", specifier = ">=2.11,<2.14" },
@@ -2596,8 +2596,8 @@ wheels = [
 
 [[package]]
 name = "rgi-toolkit"
-version = "0.4.7"
-source = { git = "https://github.com/cddlab/rgi_toolkit.git?rev=add_bioemu2#c3f430fa2a4e4a2cd05b31cd53405a398f7cdab9" }
+version = "0.5.0"
+source = { git = "https://github.com/cddlab/rgi_toolkit.git#23687da474116c18f4123f4cc76028366e491960" }
 dependencies = [
     { name = "biopython", marker = "sys_platform == 'darwin' or sys_platform == 'linux' or (extra == 'extra-7-bioemu2-cuda' and extra == 'extra-7-bioemu2-cuda12')" },
     { name = "filelock", marker = "sys_platform == 'darwin' or sys_platform == 'linux' or (extra == 'extra-7-bioemu2-cuda' and extra == 'extra-7-bioemu2-cuda12')" },
